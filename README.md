@@ -1,27 +1,35 @@
-A modern social media website built with the MERN stack, featuring user authentication, post creation, likes, comments, profile management, and a fully responsive UI with secure REST APIs.
+# 🌐 MERN Social Media Website
 
-🚀 Features
+A **modern social media web application** built using the **MERN stack**.  
+This platform allows users to **connect, share, and interact** seamlessly.  
+The project focuses on **clean UI, secure authentication, and a fully responsive design**.  
 
-User Authentication (JWT + bcrypt)
+---
 
-Post creation, likes & comments
+## 🚀 Key Features
 
-User profiles & profile photo update
+- **User Authentication**: Secure login/signup using **JWT** and **bcrypt**  
+- **Posts & Interactions**: Create posts, like, and comment  
+- **Profiles**: Manage user profiles, update profile photos  
+- **Social Connectivity**: Follow and unfollow other users  
+- **Responsive Design**: Works perfectly on desktop and mobile  
+- **Secure APIs**: Backend REST APIs with proper authentication  
 
-Follow / Unfollow system
+---
 
-Responsive UI
+## 🛠️ Tech Stack
 
-Secure REST APIs
+| Layer           | Technology       |
+|-----------------|----------------|
+| Frontend        | React           |
+| Backend         | Node.js, Express|
+| Database        | MongoDB         |
+| Authentication  | JWT, bcrypt     |
 
+---
 
+## 💡 Project Highlights
 
-🛠️ Tech Stack
-
-Frontend: React
-
-Backend: Node.js, Express
-
-Database: MongoDB
-
-Authentication: JWT
+- **Clean Code**: Easy-to-read, maintainable code structure  
+- **Scalable Architecture**: Designed to handle more features in the future  
+- **Modern UI**: Inspired by popular social media platforms  
