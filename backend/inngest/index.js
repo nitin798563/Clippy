@@ -6,7 +6,7 @@ export const inngest = new Inngest({ id: "clippy-app" });
 
 //Inngest function to save user data to a database
 const syncUserCreation = inngest.createFunction(
-    { _id: "sync-user-from-clerk" },
+    { id: "sync-user-from-clerk" },
     { event: "clerk/user.created" },
     async ({ event }) => {
         const { id, first_name, last_name, email_address, image_url } = event.data;
@@ -29,7 +29,7 @@ const syncUserCreation = inngest.createFunction(
 
 //Inggest function to update user data in the database
 const syncUserUpdation = inngest.createFunction(
-    { _id: "update-user-from-clerk" },
+    { id: "update-user-from-clerk" },
     { event: "clerk/user.updated" },
     async ({ event }) => {
         const { id, first_name, last_name, email_address, image_url } = event.data;
@@ -44,7 +44,7 @@ const syncUserUpdation = inngest.createFunction(
 
     //Innggest function to delete user data from the database
     const syncUserDeletion = inngest.createFunction(
-    { _id: "delete-user-from-clerk" },
+    { id: "delete-user-from-clerk" },
     { event: "clerk/user.deleted" },
     async ({ event }) => {
         const { id} = event.data;
