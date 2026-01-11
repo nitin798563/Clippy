@@ -16,7 +16,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
     {sidebarOpen ? 'translate-x-0' : 'max-sm:-translate-x-full'} transition-all duration-300 ease-in-out`}>
 
       <div className=" w-full">
-        <img onClick={() => navigate('/')} src={assets.logo} className="w-26 ml-7 my-2 cursor-pointer" alt="" />
+        {/* <img onClick={() => navigate('/')} src={assets.logo} className="w-26 ml-7 my-2 cursor-pointer" alt="" /> */}
         <hr className="bprder-gray-300 mb-8" />
 
         <MenuItems setSidebarOpen={setSidebarOpen} />
