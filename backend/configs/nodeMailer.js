@@ -1,4 +1,4 @@
-import nodemailer from 'modemailer'
+import nodemailer from 'nodemailer'
 
 //create a transporter object using the SMTP settings
 const transporter = nodemailer.createTransport({
