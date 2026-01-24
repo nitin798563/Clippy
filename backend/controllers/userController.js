@@ -181,14 +181,14 @@ export const sendConnectionRequest = async (req, res) => {
             created_at: { $gt: last24Hours }
         })
         if (connectionRequests.length >= 20) {
-            return res.josn({ success: false, message: "You have sent more than 20 connection requests in the last 24 hours" })
+            return res.json({ success: false, message: "You have sent more than 20 connection requests in the last 24 hours" })
         }
 
         //Check if users are already connected
         const connection = await Connection.findOne({
             $or: [
                 { from_user_id: userId, to_user_id: id },
-                { from_user_id: userId, to_user_id: userId },
+                { from_user_id: id, to_user_id: userId },
             ]
         })
         if (!connection) {
@@ -219,13 +219,13 @@ export const getUserConnections = async (req, res) => {
         const followers = user.followers
         const following = user.following
 
-        const pendingConnetions = (await Connection.find({
+        const pendingConnections = (await Connection.find({
             to_user_id: userId,
             status: 'pending'
         }).populate('from_user_id')).map(connection => connection.
             from_user_id
         )
-        res.json({ success: true, connections, followers, following, pendingConnetions })
+        res.json({ success: true, connections, followers, following, pendingConnections })
 
 
     } catch (error) {
