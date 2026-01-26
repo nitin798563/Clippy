@@ -70,7 +70,7 @@ export const likePost = async (req, res) => {
         } else {
             post.likes_count.push(userId)
             await post.save()
-            res.json({ success: true, message: 'Post Unliked' });
+            res.json({ success: true, message: 'Post liked' });
         }
     } catch (error) {
         console.log(error);
