@@ -14,7 +14,7 @@ const Feed = () => {
   const [loading, setLoading] = useState(true)
   const { getToken } = useAuth()
 
-  const fetachFeeds = async () => {
+  const fetchFeeds = async () => {
     try {
       setLoading(true)
       const { data } = await api.get('api/post/feed', {
@@ -33,7 +33,7 @@ const Feed = () => {
   }
 
   useEffect(() => {
-    fetachFeeds()
+    fetchFeeds()
   }, [])
 
   return !loading ? (
