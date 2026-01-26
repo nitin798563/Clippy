@@ -41,10 +41,13 @@ export const sendMessage = async (req, res) => {
         if (message_type === 'image') {
             const fileBuffer = fs.readFileSync(image.path)
             const response = await imagekit.files.upload({
-                file: fileBuffer,
+                file: fileBuffer.toString("base64"),
                 fileName: image.originalname,
             })
             media_url = `${process.env.IMAGEKIT_URL_ENDPOINT}/${response.filePath}?tr=w-1280,f-webp,q-auto`;
+            // delete temp file
+            fs.unlinkSync(image.path);
+
         }
         const message = await Message.create({
             from_user_id: userId,
@@ -78,7 +81,7 @@ export const getChatMessages = async (req, res) => {
         const { to_user_id } = req.body;
         const messages = await Message.find({
             $or: [
-                { from_user_id: userId, userId: to_user_id },
+                { from_user_id: userId, to_user_id: to_user_id },
                 { from_user_id: to_user_id, to_user_id: userId },
             ]
         }).sort({ createdAt: -1 })
@@ -95,8 +98,8 @@ export const getChatMessages = async (req, res) => {
 export const getUserRecentMessages = async (req, res) => {
     try {
         const { userId } = req.auth();
-        const messages = await Message.find({ to_user_id: userId }.populate('from_user_id to_user_id')).sort({ createdAt: -1 });
-        req.json({ success: true, messages });
+        const messages = await Message.find({ to_user_id: userId }).populate('from_user_id to_user_id').sort({ createdAt: -1 });
+        res.json({ success: true, messages });
     } catch (error) {
         console.log(error);
         res.json({ success: false, message: error.message });
