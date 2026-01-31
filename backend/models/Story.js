@@ -9,6 +9,13 @@ const storySchema = new mongoose.Schema({
     background_color: {type: String},
 }, { timestamps: true, minimize: false })
 
+
+//Story Deletion after 24 hours
+storySchema.index(
+    { createdAt: 1 },
+    { expireAfterSeconds: 24 * 60 * 60 } // 24 hours
+);
+
 const Story = mongoose.model('Story', storySchema)
 
 export default Story;
