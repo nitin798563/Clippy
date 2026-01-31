@@ -7,6 +7,8 @@ import RecentMessages from '../components/RecentMessages.jsx'
 import { useAuth } from '@clerk/clerk-react'
 import api from '../axios.js'
 import toast from 'react-hot-toast'
+import { Link } from 'react-router-dom'
+import { CirclePlus } from 'lucide-react'
 
 const Feed = () => {
 
@@ -24,7 +26,7 @@ const Feed = () => {
       if (data.success) {
         setFeeds(data.posts)
       } else {
-        toast.error(data.messsage)
+        toast.error(data.message)
       }
     } catch (error) {
       toast.error(error.message)
@@ -41,6 +43,24 @@ const Feed = () => {
       {/* Stories and Post List */}
       <div>
         <StoriesBar />
+
+        {/* Create Post */}
+        <div className="mx-4 mt-1 rounded-lg bg-gradient-to-r from-indigo-500 to-purple-600 p-[1.5px]">
+          <div className="flex items-center justify-between py-1.5 px-4 rounded-lg bg-white">
+            {/* Left text */}
+            <span className="font-medium text-gray-800">
+              Create New Post
+            </span>
+            {/* Right icon (colored background only) */}
+            <Link
+              to="/create-post"
+              className="p-2 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:opacity-90 active:scale-95 transition"   >
+              <CirclePlus className="w-5 h-5" />
+            </Link>
+          </div>
+        </div>
+
+
         <div className='p-4 space-y-6'>
           {/* List of Post */}
           {feeds.map((post) => (
