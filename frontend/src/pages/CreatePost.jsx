@@ -33,18 +33,19 @@ const CreatePost = () => {
         headers: { Authorization: `Bearer ${await getToken()}` }
 
       })
-      if (data.success) {
-        navigate('/')
-      } else {
-        console.log(data.message)
-        throw new Error(data.message)
+      if (!data.success) {
+        toast.error(data.message); // show backend error
+        return;
       }
+
+      toast.success(data.message || 'Post Added'); // show success
+      navigate('/'); // navigate after toast
     } catch (error) {
-      console.log(error.message)
-      throw new Error(error.message)
+      toast.error(error.response?.data?.message || error.message); // show network or backend errors
+    } finally {
+      setLoading(false);
     }
-    setLoading(false)
-  }
+  };
 
   return (
     <div className='min-h-screen bg-gradient-to-b from-slate-50 to-white'>
@@ -88,14 +89,14 @@ const CreatePost = () => {
               <Image className='size-6' />
             </label>
             <input type='file' id="images" accept='image/*' hidden multiple onChange={(e) => setImages([...images, ...e.target.files])} />
-            <button disabled={loading} onClick={() => toast.promise(handleSubmit(),
-              {
-                loading: 'uploading...',
-                success: <p>Post Added</p>,
-                error: <p>Post Not Added</p>
-              })} className='text-sm bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 active:scale-95 transition text-white font-mwduim px-8 py-2 rounded-md cursor-pointer '>
+            <button
+              disabled={loading}
+              onClick={handleSubmit}
+              className='text-sm bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 active:scale-95 transition text-white font-mwduim px-8 py-2 rounded-md cursor-pointer '
+            >
               Publish Post
             </button>
+
           </div>
         </div>
       </div>
