@@ -10,6 +10,16 @@ export const addPost = async (req, res) => {
         const { content, post_type } = req.body;
         const images = req.files
 
+        //Limit number of posts per user to 2
+        const MAX_POSTS = 2;
+        const userPostCount = await Post.countDocuments({ user: userId });
+        if (userPostCount >= MAX_POSTS) {
+            return res.status(403).json({
+                success: false,
+                message: `You can only create up to ${MAX_POSTS} posts`
+            });
+        }
+
         let image_urls = []
 
         if (images.length) {
@@ -38,6 +48,40 @@ export const addPost = async (req, res) => {
         res.json({ success: false, message: error.message });
     }
 }
+
+// Delete Post
+export const deletePost = async (req, res) => {
+    try {
+        const { userId } = req.auth()
+        const { postId } = req.params
+
+        const post = await Post.findOne({ _id: postId, user: userId })
+        if (!post) {
+            return res.json({ success: false, message: "Post not found or unauthorized" })
+        }
+
+        await Post.findByIdAndDelete(postId)
+        res.json({ success: true, message: "Post deleted successfully" })
+    } catch (error) {
+        res.json({ success: false, message: error.message })
+    }
+}
+
+// Share Post
+export const sharePost = async (req, res) => {
+    try {
+        const { postId } = req.body
+
+        await Post.findByIdAndUpdate(postId, {
+            $inc: { share_count: 1 }
+        })
+
+        res.json({ success: true })
+    } catch (error) {
+        res.json({ success: false, message: error.message })
+    }
+}
+
 
 //Get posts
 export const getFeedPosts = async (req, res) => {
@@ -77,3 +121,39 @@ export const likePost = async (req, res) => {
         res.json({ success: false, message: error.message });
     }
 }
+
+// Add Comment
+export const addComment = async (req, res) => {
+    try {
+        const { userId } = req.auth();
+        const { postId, text } = req.body;
+
+        if (!text?.trim()) {
+            return res.json({ success: false, message: "Comment cannot be empty" });
+        }
+
+        const user = await User.findById(userId);
+        if (!user) return res.json({ success: false, message: "User not found" });
+
+        const comment = {
+            user: {
+                _id: user._id,
+                full_name: user.full_name,
+                profile_picture: user.profile_picture || ""
+            },
+            text,
+            createdAt: new Date()
+        };
+
+        const post = await Post.findById(postId);
+        if (!post) return res.json({ success: false, message: "Post not found" });
+
+        post.comments.push(comment);
+        await post.save();
+
+        res.json({ success: true, comment });
+    } catch (error) {
+        console.log(error);
+        res.json({ success: false, message: error.message });
+    }
+};

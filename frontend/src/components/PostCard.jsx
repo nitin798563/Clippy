@@ -1,5 +1,5 @@
-import { BadgeCheck, Heart, MessageCircle, Share2 } from 'lucide-react'
-import React, { useState } from 'react'
+import { BadgeCheck, Heart, MessageCircle, MoreVertical, Share2, Trash2 } from 'lucide-react'
+import React, { useEffect, useRef, useState } from 'react'
 import moment from 'moment'
 import { dummyUserData } from '../assets/assets.js'
 import { useNavigate } from 'react-router-dom'
@@ -11,10 +11,19 @@ import toast from 'react-hot-toast'
 const PostCard = ({ post }) => {
 
     const postWithHashtags = post.content.replace(/(#\w+)/g, '<span class="text-indigo-600">$1</span>')
-
     const [likes, setLikes] = useState(post.likes_count)
+    const [showMenu, setShowMenu] = useState(false)
+    const [showShare, setShowShare] = useState(false)
+    const shareRef = useRef(null)
+    const menuRef = useRef(null)
+    const commentsRef = useRef(null); 
+    const [shareCount, setShareCount] = useState(post.share_count || 0)
+    const [comments, setComments] = useState(post.comments || [])
+    const [commentText, setCommentText] = useState("")
+    const [showComments, setShowComments] = useState(false)
     const currentUser = useSelector((state) => state.user.value)
     const { getToken } = useAuth()
+
     const handleLike = async () => {
         try {
             const { data } = await api.post('api/post/like', { postId: post._id },
@@ -38,23 +47,134 @@ const PostCard = ({ post }) => {
         }
     }
 
+    const handleAddComment = async () => {
+        if (!commentText.trim()) return
+        try {
+            const { data } = await api.post(
+                'api/post/comment',
+                { postId: post._id, text: commentText },
+                { headers: { Authorization: `Bearer ${await getToken()}` } }
+            )
+            if (data.success) {
+                setComments(prev => [...prev, data.comment])
+                setCommentText("")
+            } else {
+                toast.error(data.message)
+            }
+        } catch (error) {
+            toast.error(error.message)
+        }
+    }
+
+    const handleDelete = async () => {
+        try {
+            const { data } = await api.delete(`api/post/${post._id}`, {
+                headers: { Authorization: `Bearer ${await getToken()}` }
+            })
+
+            if (data.success) {
+                toast.success(data.message)
+                window.location.reload() // simple & effective
+            } else {
+                toast.error(data.message)
+            }
+        } catch (error) {
+            toast.error(error.message)
+        }
+    }
+
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            // 3-dot menu close
+            if (menuRef.current && !menuRef.current.contains(e.target)) {
+                setShowMenu(false)
+            }
+            // Share menu close
+            if (shareRef.current && !shareRef.current.contains(e.target)) {
+                setShowShare(false)
+            }
+            // Comments box close
+        if (commentsRef.current && !commentsRef.current.contains(e.target)) {
+            setShowComments(false)
+        }
+        }
+
+        document.addEventListener('mousedown', handleClickOutside)
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside)
+        }
+    }, [])
+
+    const postUrl = `${window.location.origin}/post/${post._id}`
+
+    const handleShareSuccess = async () => {
+        await api.post(
+            'api/post/share',
+            { postId: post._id },
+            { headers: { Authorization: `Bearer ${await getToken()}` } }
+        )
+
+        setShareCount(prev => prev + 1)
+    }
+    const handleNativeShare = async () => {
+        if (navigator.share) {
+            await navigator.share({
+                title: 'Check this post',
+                text: post.content,
+                url: postUrl
+            })
+            handleShareSuccess()
+        } else {
+            handleCopyLink()
+        }
+    }
+
+    const handleCopyLink = async () => {
+        await navigator.clipboard.writeText(postUrl)
+        toast.success('Link copied')
+        handleShareSuccess()
+    }
+
     const navigate = useNavigate()
 
     return (
         <div className='bg-white rounded-xl shadow p-4 space-y-4 w-full max-w-2xl'>
 
-            {/* User Info */}
-            <div onClick={() => navigate('/profile/' + post.user._id)} className='inline-flex items-center gap-3 cursor-pointer'>
-                <img src={post.user.profile_picture} alt='' className='w-10 h-10 rounded-full shadow' />
-                <div>
-                    <div className='flex items-center space-x-1'>
-                        <span>{post.user.full_name}</span>
-                        <BadgeCheck className='w-4 h-4 text-blue-500' />
-                    </div>
-                    <div className='text-gray-500 text-sm'>
-                        @{post.user.username} . {moment(post.createdAt).fromNow()}
+            <div className='flex items-start justify-between'>
+                {/* User Info */}
+                <div onClick={() => navigate('/profile/' + post.user._id)} className='inline-flex items-center gap-3 cursor-pointer'>
+                    <img src={post.user.profile_picture} alt='' className='w-10 h-10 rounded-full shadow' />
+                    <div>
+                        <div className='flex items-center space-x-1'>
+                            <span>{post.user.full_name}</span>
+                            <BadgeCheck className='w-4 h-4 text-blue-500' />
+                        </div>
+                        <div className='text-gray-500 text-sm'>
+                            @{post.user.username} . {moment(post.createdAt).fromNow()}
+                        </div>
                     </div>
                 </div>
+                {/* 3 dot menu */}
+                {currentUser._id === post.user._id && (
+                    <div className='relative' ref={menuRef}>
+                        <MoreVertical
+                            className='w-5 h-5 cursor-pointer'
+                            onClick={() => setShowMenu(!showMenu)}
+                        />
+
+                        {showMenu && (
+                            <div className='absolute right-0 mt-2 bg-white border rounded shadow w-32 z-10'>
+                                <button
+                                    onClick={handleDelete}
+                                    className='flex items-center gap-2 px-3 py-2 text-red-500 hover:bg-red-50 w-full text-sm'
+                                >
+                                    <Trash2 className='w-4 h-4' />
+                                    Delete
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                )}
             </div>
             {/* Content */}
             {post.content && <div className='text-gray-800 text-sm whitespace-pre-line ' dangerouslySetInnerHTML={{ __html: postWithHashtags }} />}
@@ -72,16 +192,74 @@ const PostCard = ({ post }) => {
                     <span>{likes.length}</span>
                 </div>
                 <div className='flex items-center gap-1'>
-                    <MessageCircle className='w-4 h-4' />
-                    <span>{12}</span>
+                    <MessageCircle
+                        className='w-4 h-4 cursor-pointer'
+                        onClick={() => setShowComments(!showComments)}
+                    />
+                    <span>{comments.length}</span>
                 </div>
-                <div className='flex items-center gap-1'>
-                    <Share2 className='w-4 h-4' />
-                    <span>{7}</span>
-                </div>
+                <div className='flex items-center gap-1 relative' ref={shareRef}>
+                    <Share2
+                        className='w-4 h-4 cursor-pointer'
+                        onClick={() => setShowShare(!showShare)}
+                    />
+                    <span>{shareCount}</span>
 
+                    {showShare && (
+                        <div className='absolute bottom-6 right-0 bg-white border rounded shadow w-40 z-10'>
+                            <button
+                                onClick={handleNativeShare}
+                                className='px-3 py-2 text-sm hover:bg-gray-100 w-full text-left'
+                            >
+                                Share
+                            </button>
+                            <button
+                                onClick={handleCopyLink}
+                                className='px-3 py-2 text-sm hover:bg-gray-100 w-full text-left'
+                            >
+                                Copy link
+                            </button>
+                        </div>
+                    )}
+                </div>
             </div>
 
+            {showComments && (
+                <div className='mt-2 space-y-2' ref={commentsRef}>
+                    {/* Existing Comments */}
+                    {comments.map((c, index) => (
+                        <div key={index} className='flex items-start gap-2'>
+                            <img src={c.user.profile_picture} alt='' className='w-6 h-6 rounded-full' />
+                            <div>
+                                <span className='font-semibold text-sm'>{c.user.full_name}</span>{" "}
+                                <span className='text-gray-700 text-sm'>{c.text}</span>
+                                <div className='text-gray-400 text-xs'>
+                                    {moment(c.createdAt).fromNow()}
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+
+                    {/* New Comment Input */}
+                    <div className='flex flex-col mt-2'>
+                        <textarea
+                            placeholder='Add a comment...'
+                            value={commentText}
+                            onChange={e => setCommentText(e.target.value)}
+                            className='w-full border rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder-gray-400'
+                            rows={2} // default 2 rows
+                        />
+                        <div className='flex justify-end mt-1'>
+                            <button
+                                onClick={handleAddComment}
+                                className='bg-indigo-500 text-white px-3 py-1 rounded-lg text-sm hover:bg-indigo-600 transition'
+                            >
+                                Post
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }
