@@ -50,10 +50,25 @@ export const updateUserData = async (req, res) => {
         const cover = req.files.cover && req.files.cover[0];
 
         if (profile) {
+
+            // 🗑 Delete old profile image from ImageKit
+            if (tempUser.profile_picture_fileId) {
+                try {
+                    await imagekit.files.delete(tempUser.profile_picture_fileId);
+                }
+                catch (err) {
+                    if (err.status === 404) {
+                        console.log("File already deleted from ImageKit");
+                    } else {
+                        throw err;
+                    }
+                }
+            }
             const buffer = fs.readFileSync(profile.path)
             const response = await imagekit.files.upload({
                 file: buffer.toString("base64"),
-                fileName: profile.originalname
+                fileName: profile.originalname,
+                folder: "profilephotos",
             })
 
             // const url = imagekit.helper.generateURL({
@@ -66,15 +81,29 @@ export const updateUserData = async (req, res) => {
             // })
             const profileUrl = `${process.env.IMAGEKIT_URL_ENDPOINT}/${response.filePath}?tr=w-512,f-webp,q-auto`;
             updatedData.profile_picture = profileUrl;
+            updatedData.profile_picture_fileId = response.fileId;
 
             // Delete local temp file after upload
             fs.unlinkSync(profile.path);
         }
         if (cover) {
+            if (tempUser.cover_photo_fileId) {
+                try {
+                await imagekit.files.delete(tempUser.cover_photo_fileId);
+            }
+             catch (err) {
+                    if (err.status === 404) {
+                        console.log("File already deleted from ImageKit");
+                    } else {
+                        throw err;
+                    }
+                }
+            }
             const buffer = fs.readFileSync(cover.path)
             const response = await imagekit.files.upload({
                 file: buffer.toString("base64"),
-                fileName: cover.originalname
+                fileName: cover.originalname,
+                folder: "coverphotos",
             })
 
             // const url = imagekit.helper.generateURL({
@@ -87,6 +116,7 @@ export const updateUserData = async (req, res) => {
             // })
             const coverUrl = `${process.env.IMAGEKIT_URL_ENDPOINT}/${response.filePath}?tr=w-1280,f-webp,q-auto`;
             updatedData.cover_photo = coverUrl;
+            updatedData.cover_photo_fileId = response.fileId;
 
             // Delete local temp file after upload
             fs.unlinkSync(cover.path);
@@ -195,14 +225,14 @@ export const sendConnectionRequest = async (req, res) => {
             ]
         })
         if (!connection) {
-           const newConnection =  await Connection.create({
+            const newConnection = await Connection.create({
                 from_user_id: userId,
                 to_user_id: id
             })
 
             await inngest.send({
                 name: 'app/connection-request',
-                data: {connectionId: newConnection._id}
+                data: { connectionId: newConnection._id }
             })
             return res.json({ success: true, message: "Connection request sent successfully" })
         } else if (connection && connection.status === 'accepted') {

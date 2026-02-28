@@ -18,7 +18,8 @@ export const addUserStory = async (req, res) => {
             const response = await imagekit.files.upload(
                 {
                     file: fileBuffer.toString("base64"),
-                    fileName: media.originalname
+                    fileName: media.originalname,
+                     folder: "/story_media",
                 }
             )
             media_url = response.url
