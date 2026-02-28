@@ -43,6 +43,7 @@ export const sendMessage = async (req, res) => {
             const response = await imagekit.files.upload({
                 file: fileBuffer.toString("base64"),
                 fileName: image.originalname,
+                 folder: "/messages",
             })
             media_url = `${process.env.IMAGEKIT_URL_ENDPOINT}/${response.filePath}?tr=w-1280,f-webp,q-auto`;
             // delete temp file

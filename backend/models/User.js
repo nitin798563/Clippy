@@ -7,6 +7,8 @@ const userSchema = new mongoose.Schema({
     email: {type: String, required: true, unique: true},
     bio: {type: String, default: "Hello! I'm using Clippy."},
     profile_picture: {type: String, default: ""},
+    profile_picture_fileId: {type: String, default: ""},
+    cover_photo_fileId: {type: String, default: ""},
     cover_photo : {type: String, default: ""},
     location: {type: String, default: ""},
     followers : [{type: String, ref: "User"}],
