@@ -83,7 +83,7 @@ const ChatBox = () => {
           <p className='text-sm text-gray-500 -mt-1.5'>@{user.username}</p>
         </div>
       </div>
-      <div className='p-5 md:px-10 h-full overflow-y-scroll pb-24'>
+      <div className='p-5 md:px-10 h-full overflow-y-scroll pb-24 md:pb-5'>
         <div className='space-y-4 max-w-4xl mx-auto'>
           {
             messages.toSorted((a, b) => new Date(a.createdAt) - new Date(b.createdAt)).map((message, index) => (
@@ -104,7 +104,7 @@ const ChatBox = () => {
         </div>
 
       </div>
-      <div className='fixed bottom-10 left-0 right-0 px-4 bg-slate-50'>
+      <div className='fixed md:static bottom-10 md:bottom-0 left-0 right-0 px-4 bg-slate-50'>
         <div className='flex items-center gap-3 pl-5 p-1.5 bg-white w-full max-w-xl mx-auto border border-gray-200 shadow rounded-full mb-5'>
           <input type='text' className='flex-1 outline-none text-slate-700' placeholder='Type a message...' onKeyDown={e => e.key === 'Enter' && sendMessage()} onChange={(e) => setText(e.target.value)} value={text} />
 
