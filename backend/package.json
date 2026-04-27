@@ -17,7 +17,7 @@
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
-    "inngest": "^3.49.1",
+    "inngest": "^4.2.4",
     "mongoose": "^9.0.0",
     "multer": "^2.0.2",
     "nodemailer": "^7.0.12"
