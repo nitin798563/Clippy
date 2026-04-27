@@ -17,6 +17,7 @@ const PostCard = ({ post }) => {
     const shareRef = useRef(null)
     const menuRef = useRef(null)
     const commentsRef = useRef(null);
+    const commentMenuRef = useRef(null)
     const [shareCount, setShareCount] = useState(post.share_count || 0)
     const [comments, setComments] = useState(post.comments || [])
     const [commentText, setCommentText] = useState("")
@@ -173,7 +174,10 @@ const PostCard = ({ post }) => {
             if (commentsRef.current && !commentsRef.current.contains(e.target)) {
                 setShowComments(false)
             }
-            setOpenCommentMenuId(null)
+            //setOpenCommentMenuId(null)
+            if (commentMenuRef.current && !commentMenuRef.current.contains(e.target)) {
+                setOpenCommentMenuId(null)
+            }
         }
 
         document.addEventListener('mousedown', handleClickOutside)
@@ -395,7 +399,7 @@ const PostCard = ({ post }) => {
 
                                             {/* dropdown */}
                                             {openCommentMenuId === c._id && (
-                                                <div className='absolute right-0 mt-1 bg-white border rounded shadow flex flex-col text-xs'>
+                                                <div ref={commentMenuRef} className='absolute right-0 mt-1 bg-white border rounded shadow flex flex-col text-xs'>
 
                                                     <button
                                                         onClick={() => {
@@ -403,14 +407,14 @@ const PostCard = ({ post }) => {
                                                             setEditCommentText(c.text)
                                                             setOpenCommentMenuId(null)
                                                         }}
-                                                        className='px-3 py-1 text-blue-500 hover:bg-blue-50'
+                                                        className='px- text-blue-500 hover:bg-blue-50'
                                                     >
                                                         Edit
                                                     </button>
-
+                                                    <hr></hr>
                                                     <button
                                                         onClick={() => handleDeleteComment(c._id)}
-                                                        className='px-3 py-1 text-red-500 hover:bg-red-50'
+                                                        className='px-3 text-red-500 hover:bg-red-50'
                                                     >
                                                         Delete
                                                     </button>
