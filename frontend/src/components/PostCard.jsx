@@ -27,6 +27,7 @@ const PostCard = ({ post }) => {
     const [editedContent, setEditedContent] = useState(post.content)
     const [editingCommentId, setEditingCommentId] = useState(null)
     const [editCommentText, setEditCommentText] = useState("")
+    const [openCommentMenuId, setOpenCommentMenuId] = useState(null)
 
     const handleLike = async () => {
         try {
@@ -172,6 +173,7 @@ const PostCard = ({ post }) => {
             if (commentsRef.current && !commentsRef.current.contains(e.target)) {
                 setShowComments(false)
             }
+            setOpenCommentMenuId(null)
         }
 
         document.addEventListener('mousedown', handleClickOutside)
@@ -377,23 +379,43 @@ const PostCard = ({ post }) => {
 
                                     {/* actions */}
                                     {c.user._id === currentUser._id && editingCommentId !== c._id && (
-                                        <div className='absolute right-2 top-2 opacity-0 group-hover:opacity-100 flex gap-2 text-xs'>
+                                        <div className='absolute right-2 top-2 text-xs'>
+
+                                            {/* 3-dot button */}
                                             <button
-                                                onClick={() => {
-                                                    setEditingCommentId(c._id)
-                                                    setEditCommentText(c.text)
-                                                }}
-                                                className='text-blue-500'
+                                                onClick={() =>
+                                                    setOpenCommentMenuId(
+                                                        openCommentMenuId === c._id ? null : c._id
+                                                    )
+                                                }
+                                                className='text-gray-900 text-xl font-bold px-2 py-1 rounded-full hover:bg-gray-200 active:scale-95 transition'
                                             >
-                                                Edit
+                                                ⋮
                                             </button>
 
-                                            <button
-                                                onClick={() => handleDeleteComment(c._id)}
-                                                className='text-red-500'
-                                            >
-                                                Delete
-                                            </button>
+                                            {/* dropdown */}
+                                            {openCommentMenuId === c._id && (
+                                                <div className='absolute right-0 mt-1 bg-white border rounded shadow flex flex-col text-xs'>
+
+                                                    <button
+                                                        onClick={() => {
+                                                            setEditingCommentId(c._id)
+                                                            setEditCommentText(c.text)
+                                                            setOpenCommentMenuId(null)
+                                                        }}
+                                                        className='px-3 py-1 text-blue-500 hover:bg-blue-50'
+                                                    >
+                                                        Edit
+                                                    </button>
+
+                                                    <button
+                                                        onClick={() => handleDeleteComment(c._id)}
+                                                        className='px-3 py-1 text-red-500 hover:bg-red-50'
+                                                    >
+                                                        Delete
+                                                    </button>
+                                                </div>
+                                            )}
                                         </div>
                                     )}
 
