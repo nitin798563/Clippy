@@ -67,6 +67,26 @@ export const deletePost = async (req, res) => {
     }
 }
 
+// Update Post
+export const updatePost = async (req, res) => {
+    try {
+        const { userId } = req.auth()
+        const { postId, content, post_type } = req.body
+        const post = await Post.findOne({ _id: postId, user: userId })
+        if (!post) {
+            return res.json({ success: false, message: "Post not found or unauthorized" })
+        }
+        post.content = content ?? post.content
+        post.post_type = post_type ?? post.post_type
+
+        await post.save()
+
+        res.json({ success: true, message: "Post updated successfully", post })
+    } catch (error) {
+        res.json({ success: false, message: error.message })
+    }
+}
+
 // Share Post
 export const sharePost = async (req, res) => {
     try {
@@ -154,6 +174,66 @@ export const addComment = async (req, res) => {
         res.json({ success: true, comment });
     } catch (error) {
         console.log(error);
+        res.json({ success: false, message: error.message });
+    }
+};
+
+export const updateComment = async (req, res) => {
+    try {
+        const { userId } = req.auth();
+        const { postId, commentId, text } = req.body;
+        if (!text?.trim()) {
+            return res.json({ success: false, message: "Comment cannot be empty" });
+        }
+        const post = await Post.findById(postId);
+        if (!post) {
+            return res.json({ success: false, message: "Post not found" });
+        }
+        const commentIndex = post.comments.findIndex(
+            c => c._id?.toString() === commentId
+        );
+        if (commentIndex === -1) {
+            return res.json({ success: false, message: "Comment not found" });
+        }
+        if (post.comments[commentIndex].user._id !== userId) {
+            return res.json({ success: false, message: "Unauthorized" });
+        }
+        post.comments[commentIndex].text = text;
+        await post.save();
+        res.json({
+            success: true,
+            message: "Comment updated",
+            comment: post.comments[commentIndex]
+        });
+    } catch (error) {
+        res.json({ success: false, message: error.message });
+    }
+};
+
+export const deleteComment = async (req, res) => {
+    try {
+        const { userId } = req.auth();
+        const { postId, commentId } = req.body;
+        const post = await Post.findById(postId);
+        if (!post) {
+            return res.json({ success: false, message: "Post not found" });
+        }
+        const commentIndex = post.comments.findIndex(
+            c => c._id?.toString() === commentId
+        );
+        if (commentIndex === -1) {
+            return res.json({ success: false, message: "Comment not found" });
+        }
+        if (post.comments[commentIndex].user._id !== userId) {
+            return res.json({ success: false, message: "Unauthorized" });
+        }
+        post.comments.splice(commentIndex, 1);
+        await post.save();
+        res.json({
+            success: true,
+            message: "Comment deleted"
+        });
+    } catch (error) {
         res.json({ success: false, message: error.message });
     }
 };
