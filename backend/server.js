@@ -9,8 +9,21 @@ import userRouter from './routes/userRoutes.js';
 import postRouter from './routes/postRoutes.js';
 import storyRouter from './routes/storyRoutes.js';
 import messageRouter from './routes/messageRoutes.js';
+import { createServer } from "http";
+import { Server } from "socket.io";
 
 const app = express();
+const server = createServer(app);
+const io = new Server(server, {
+  cors: { origin: "*" },
+});
+app.set("io", io);
+io.on("connection", (socket) => {
+  socket.on("join", (userId) => {
+    socket.join(userId);
+  });
+});
+
 
 await connectDB();
 
@@ -27,4 +40,8 @@ app.use('/api/messages', messageRouter)
 
 const PORT = process.env.PORT || 4000;
 
-app.listen(PORT, ()=>console.log(`Server is running on port ${PORT} ✅`))
+//app.listen(PORT, ()=>console.log(`Server is running on port ${PORT} ✅`))
+
+server.listen(PORT, () => {
+  console.log(`Server running on ${PORT} ✅`);
+});

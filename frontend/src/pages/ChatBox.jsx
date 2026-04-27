@@ -74,6 +74,13 @@ const ChatBox = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages])
 
+  const formatTime = (date) => {
+    return new Date(date).toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
   return user && (
     <div className='flex flex-col h-screen'>
       <div className='flex items-center gap-2 p-2 md:px-10 xl:pl-42 bg-gradient-to-r from-indigo-50 to-purple-50 border-b border-gray-300'>
@@ -95,6 +102,9 @@ const ChatBox = () => {
                     <img src={message.media_url} alt="" className='w-full max-w-sm rounded-lg mb-1' />
                   }
                   <p>{message.text}</p>
+                  <p className="text-[10px] text-gray-400 mt-1 text-right">
+                    {formatTime(message.createdAt)}
+                  </p>
                 </div>
 
               </div>))
