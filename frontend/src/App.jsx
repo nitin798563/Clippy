@@ -17,6 +17,7 @@ import { fetchUser } from './features/user/userSlice.js'
 import { fetchConnections } from './features/connections/connectionsSlice.js'
 import { addMessages } from './features/messages/messagesSlice.js'
 import Notification from './components/Notification.jsx'
+import { socket } from "./socket";
 
 const App = () => {
   const { user } = useUser();
@@ -40,25 +41,43 @@ const App = () => {
     pathnameRef.current = pathname
   }, [pathname])
 
-  useEffect(() => {
-    if (user) {
-      const eventSource = new EventSource(import.meta.env.VITE_BASEURL + '/api/messages/' + user.id);
-      eventSource.onmessage = (event) => {
-        const message = JSON.parse(event.data)
+  // useEffect(() => {
+  //   if (user) {
+  //     const eventSource = new EventSource(import.meta.env.VITE_BASEURL + '/api/messages/' + user.id);
+  //     eventSource.onmessage = (event) => {
+  //       const message = JSON.parse(event.data)
 
-        if (pathnameRef.current === ('/messages/' + message.from_user_id._id)) {
-          dispatch(addMessages(message))
-        } else {
-          toast.custom((t) => (
-            <Notification t={t} message={message} />
-          ), { position: "bottom-right", duration: Infinity})
-        }
-      }
-      return () => {
-        eventSource.close()
-      }
+  //       if (pathnameRef.current === ('/messages/' + message.from_user_id._id)) {
+  //         dispatch(addMessages(message))
+  //       } else {
+  //         toast.custom((t) => (
+  //           <Notification t={t} message={message} />
+  //         ), { position: "bottom-right", duration: Infinity})
+  //       }
+  //     }
+  //     return () => {
+  //       eventSource.close()
+  //     }
+  //   }
+  // }, [user, dispatch])
+
+  useEffect(() => {
+  if (!user) return;
+
+  socket.emit("join", user.id);
+
+  socket.on("receive_message", (message) => {
+    if (pathnameRef.current === '/messages/' + message.from_user_id._id) {
+      dispatch(addMessages(message));
+    } else {
+      toast.custom((t) => (
+        <Notification t={t} message={message} />
+      ), { position: "bottom-right" });
     }
-  }, [user, dispatch])
+  });
+
+  return () => socket.off("receive_message");
+}, [user]);
 
   return (
     <>

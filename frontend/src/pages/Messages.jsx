@@ -2,12 +2,33 @@ import React from 'react'
 import { dummyConnectionsData } from '../assets/assets.js'
 import { Eye, MessageSquare } from 'lucide-react'
 import {useNavigate} from 'react-router-dom'
-import { useSelector } from 'react-redux'
+import { useDispatch, useSelector } from 'react-redux'
+import { socket } from "../socket";
+import { useEffect } from 'react'
+import { useUser } from "@clerk/clerk-react";
+import { addMessages } from '../features/messages/messagesSlice.js'
 
 const Messages = () => {
 
   const {connections} = useSelector((state)=>state.connections)
   const navigate = useNavigate()
+   const dispatch = useDispatch();
+   const { user } = useUser();
+const userId = user?.id;
+
+  useEffect(() => {
+  socket.emit("join", userId);
+
+  socket.on("receive_message", (data) => {
+    console.log("New message:", data);
+
+   dispatch(addMessages(data)); // Redux update
+  });
+
+  return () => {
+    socket.off("receive_message");
+  };
+}, []);
 
   return (
     <div className='min-h-screen relative bg-slate-50'>
