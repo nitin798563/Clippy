@@ -1,58 +1,81 @@
-import { BadgeCheck, X } from 'lucide-react'
+import { Trash2, BadgeCheck, X } from 'lucide-react'
 import React, { useEffect, useState } from 'react'
+import { useAuth } from '@clerk/clerk-react'
+import api from '../axios.js'
+import toast from 'react-hot-toast'
 
 const StoryViewer = ({ viewStory, setViewStory }) => {
 
     const [progress, setProgress] = useState(0)
+    const { getToken } = useAuth();
+    const handleDelete = async () => {
+        try {
+            const token = await getToken();
 
-    useEffect(()=>{
-        let timer,progressInterval;
+            const { data } = await api.delete(`/api/story/delete/${viewStory._id}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
 
-        if(viewStory && viewStory.media_type !== 'video'){
+            if (data.success) {
+                toast.success("Story deleted");
+                setViewStory(null);
+            } else {
+                toast.error(data.message);
+            }
+
+        } catch (error) {
+            toast.error(error.message);
+        }
+    };
+
+    useEffect(() => {
+        let timer, progressInterval;
+
+        if (viewStory && viewStory.media_type !== 'video') {
             setProgress(0)
 
             const duration = 10000;
             const setTime = 100;
             let elapsed = 0;
 
-           progressInterval = setInterval(()=>{
+            progressInterval = setInterval(() => {
                 elapsed += setTime;
-                setProgress((elapsed/duration)*100);
+                setProgress((elapsed / duration) * 100);
             }, setTime);
 
             // Close Story after 10sec
 
-            timer = setTimeout(()=>{
+            timer = setTimeout(() => {
                 setViewStory(null)
             }, duration)
         }
 
-        return () =>{
+        return () => {
             clearTimeout(timer)
             clearInterval(progressInterval)
         }
-    },[viewStory, setViewStory])
+    }, [viewStory, setViewStory])
 
-    const handleColse=()=>{
+    const handleColse = () => {
         setViewStory(null)
     }
 
-    if(!viewStory) return null
+    if (!viewStory) return null
 
-    const renderContent =()=>{
-        switch(viewStory.media_type){
+    const renderContent = () => {
+        switch (viewStory.media_type) {
             case 'image':
-                return(
-                    <img src={viewStory.media_url} alt='' className='max-w-full max-h-screen object-contain'/>
+                return (
+                    <img src={viewStory.media_url} alt='' className='max-w-full max-h-screen object-contain' />
                 );
 
-             case 'video':
-                return(
-                    <video onEnded={()=> setViewStory(null)} src={viewStory.media_url}  className=' max-h-screen ' controls autoPlay/>
-                ); 
+            case 'video':
+                return (
+                    <video onEnded={() => setViewStory(null)} src={viewStory.media_url} className=' max-h-screen ' controls autoPlay />
+                );
 
-             case 'text':
-                return(
+            case 'text':
+                return (
                     <div className='w-full h-full flex items-center justify-center p-8 text-white text-2xl text-center'>
                         {viewStory.content}
                     </div>
@@ -68,7 +91,7 @@ const StoryViewer = ({ viewStory, setViewStory }) => {
 
             {/* Progress Bar */}
             <div className='absolute top-0 left-0 w-full h-1 bg-gray-700'>
-                <div className='h-full bg-white transition-all duration-100 linear' style={{ width: `${progress}%`}}>
+                <div className='h-full bg-white transition-all duration-100 linear' style={{ width: `${progress}%` }}>
 
                 </div>
             </div>
@@ -85,12 +108,18 @@ const StoryViewer = ({ viewStory, setViewStory }) => {
 
             {/* Close Button */}
             <button onClick={handleColse} className='absolute top-4 right-4 text-white text-3xl font-bold focus:outline-none'>
-                <X className='w-8 h-8 hover:scale-110 transition cursor-pointer'/>
+                <X className='w-8 h-8 hover:scale-110 transition cursor-pointer' />
+            </button>
+            <button
+                onClick={handleDelete}
+                className='absolute top-4 right-16 text-white'
+            >
+                <Trash2 className='w-7 h-7 hover:scale-110 transition cursor-pointer' />
             </button>
 
             {/* Content Wrapper */}
             <div className='max-w-[90vw] max-h-[90vh] flex items-center justify-center'>
-            {renderContent()}
+                {renderContent()}
 
             </div>
 

@@ -1,4 +1,4 @@
-import { BadgeCheck, Heart, MessageCircle, MoreVertical, Share2, Trash2 } from 'lucide-react'
+import { BadgeCheck, Heart, MessageCircle, MoreVertical, Pencil, Share2, Trash2 } from 'lucide-react'
 import React, { useEffect, useRef, useState } from 'react'
 import moment from 'moment'
 import { dummyUserData } from '../assets/assets.js'
@@ -16,13 +16,17 @@ const PostCard = ({ post }) => {
     const [showShare, setShowShare] = useState(false)
     const shareRef = useRef(null)
     const menuRef = useRef(null)
-    const commentsRef = useRef(null); 
+    const commentsRef = useRef(null);
     const [shareCount, setShareCount] = useState(post.share_count || 0)
     const [comments, setComments] = useState(post.comments || [])
     const [commentText, setCommentText] = useState("")
     const [showComments, setShowComments] = useState(false)
     const currentUser = useSelector((state) => state.user.value)
     const { getToken } = useAuth()
+    const [isEditing, setIsEditing] = useState(false)
+    const [editedContent, setEditedContent] = useState(post.content)
+    const [editingCommentId, setEditingCommentId] = useState(null)
+    const [editCommentText, setEditCommentText] = useState("")
 
     const handleLike = async () => {
         try {
@@ -83,6 +87,77 @@ const PostCard = ({ post }) => {
         }
     }
 
+    const handleUpdate = async () => {
+        try {
+            const { data } = await api.put(
+                'api/post/update',
+                {
+                    postId: post._id,
+                    content: editedContent,
+                    post_type: post.post_type
+                },
+                { headers: { Authorization: `Bearer ${await getToken()}` } }
+            )
+
+            if (data.success) {
+                toast.success(data.message)
+                setIsEditing(false)
+                window.location.reload()
+            } else {
+                toast.error(data.message)
+            }
+        } catch (error) {
+            toast.error(error.message)
+        }
+    }
+
+    const handleUpdateComment = async (commentId) => {
+        try {
+            const { data } = await api.put(
+                'api/post/comment',
+                {
+                    postId: post._id,
+                    commentId,
+                    text: editCommentText
+                },
+                { headers: { Authorization: `Bearer ${await getToken()}` } }
+            )
+            if (data.success) {
+                setComments(prev =>
+                    prev.map(c => c._id === commentId ? { ...c, text: editCommentText } : c)
+                )
+                setEditingCommentId(null)
+                setEditCommentText("")
+                toast.success("Comment updated")
+            } else {
+                toast.error(data.message)
+            }
+        } catch (err) {
+            toast.error(err.message)
+        }
+    }
+
+    const handleDeleteComment = async (commentId) => {
+        try {
+            const { data } = await api.delete(
+                'api/post/comment',
+                {
+                    data: { postId: post._id, commentId },
+                    headers: { Authorization: `Bearer ${await getToken()}` }
+                }
+            )
+
+            if (data.success) {
+                setComments(prev => prev.filter(c => c._id !== commentId))
+                toast.success("Comment deleted")
+            } else {
+                toast.error(data.message)
+            }
+        } catch (err) {
+            toast.error(err.message)
+        }
+    }
+
     useEffect(() => {
         const handleClickOutside = (e) => {
             // 3-dot menu close
@@ -94,9 +169,9 @@ const PostCard = ({ post }) => {
                 setShowShare(false)
             }
             // Comments box close
-        if (commentsRef.current && !commentsRef.current.contains(e.target)) {
-            setShowComments(false)
-        }
+            if (commentsRef.current && !commentsRef.current.contains(e.target)) {
+                setShowComments(false)
+            }
         }
 
         document.addEventListener('mousedown', handleClickOutside)
@@ -165,6 +240,16 @@ const PostCard = ({ post }) => {
                         {showMenu && (
                             <div className='absolute right-0 mt-2 bg-white border rounded shadow w-32 z-10'>
                                 <button
+                                    onClick={() => {
+                                        setIsEditing(true)
+                                        setShowMenu(false)
+                                    }}
+                                    className='flex items-center gap-2 px-3 py-2 text-blue-500 hover:bg-blue-50 w-full text-sm'
+                                >
+                                    <Pencil className='w-4 h-4' />
+                                    Edit
+                                </button>
+                                <button
                                     onClick={handleDelete}
                                     className='flex items-center gap-2 px-3 py-2 text-red-500 hover:bg-red-50 w-full text-sm'
                                 >
@@ -177,7 +262,21 @@ const PostCard = ({ post }) => {
                 )}
             </div>
             {/* Content */}
-            {post.content && <div className='text-gray-800 text-sm whitespace-pre-line ' dangerouslySetInnerHTML={{ __html: postWithHashtags }} />}
+            {isEditing ? (
+                <textarea
+                    value={editedContent}
+                    onChange={(e) => setEditedContent(e.target.value)}
+                    className='w-full border p-2 rounded text-sm'
+                    rows={4}
+                />
+            ) : (
+                post.content && (
+                    <div
+                        className='text-gray-800 text-sm whitespace-pre-line'
+                        dangerouslySetInnerHTML={{ __html: postWithHashtags }}
+                    />
+                )
+            )}
             {/* Images */}
             <div className='grid grid-cols-2 gap-2'>
                 {post.image_urls.map((img, index) => (
@@ -227,37 +326,120 @@ const PostCard = ({ post }) => {
             {showComments && (
                 <div className='mt-2 space-y-2' ref={commentsRef}>
                     {/* Existing Comments */}
-                    {comments.map((c, index) => (
-                        <div key={index} className='flex items-start gap-2'>
-                            <img src={c.user.profile_picture} alt='' className='w-6 h-6 rounded-full' />
-                            <div>
-                                <span className='font-semibold text-sm'>{c.user.full_name}</span>{" "}
-                                <span className='text-gray-700 text-sm'>{c.text}</span>
-                                <div className='text-gray-400 text-xs'>
-                                    {moment(c.createdAt).fromNow()}
+                    <div className='space-y-3'>
+                        {comments.map((c) => (
+                            <div key={c._id} className='flex gap-2 items-start group'>
+
+                                <img
+                                    src={c.user.profile_picture}
+                                    className='w-8 h-8 rounded-full'
+                                />
+
+                                <div className='flex-1 bg-gray-50 px-3 py-2 rounded-lg relative'>
+
+                                    {/* Name + text / edit */}
+                                    <div className='text-sm'>
+                                        <span className='font-semibold'>{c.user.full_name}</span>
+
+                                        {editingCommentId === c._id ? (
+                                            <div className='mt-2'>
+                                                <input
+                                                    value={editCommentText}
+                                                    onChange={(e) => setEditCommentText(e.target.value)}
+                                                    className='w-full border px-2 py-1 text-sm rounded'
+                                                />
+
+                                                <div className='flex gap-2 mt-2'>
+                                                    <button
+                                                        onClick={() => handleUpdateComment(c._id)}
+                                                        className='text-green-600 text-xs font-medium'
+                                                    >
+                                                        Save
+                                                    </button>
+
+                                                    <button
+                                                        onClick={() => setEditingCommentId(null)}
+                                                        className='text-gray-500 text-xs'
+                                                    >
+                                                        Cancel
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <p className='text-gray-700'>{c.text}</p>
+                                        )}
+                                    </div>
+
+                                    {/* time */}
+                                    <div className='text-xs text-gray-400 mt-1'>
+                                        {moment(c.createdAt).fromNow()}
+                                    </div>
+
+                                    {/* actions */}
+                                    {c.user._id === currentUser._id && editingCommentId !== c._id && (
+                                        <div className='absolute right-2 top-2 opacity-0 group-hover:opacity-100 flex gap-2 text-xs'>
+                                            <button
+                                                onClick={() => {
+                                                    setEditingCommentId(c._id)
+                                                    setEditCommentText(c.text)
+                                                }}
+                                                className='text-blue-500'
+                                            >
+                                                Edit
+                                            </button>
+
+                                            <button
+                                                onClick={() => handleDeleteComment(c._id)}
+                                                className='text-red-500'
+                                            >
+                                                Delete
+                                            </button>
+                                        </div>
+                                    )}
+
                                 </div>
                             </div>
-                        </div>
-                    ))}
+                        ))}
+                    </div>
 
                     {/* New Comment Input */}
-                    <div className='flex flex-col mt-2'>
-                        <textarea
-                            placeholder='Add a comment...'
-                            value={commentText}
-                            onChange={e => setCommentText(e.target.value)}
-                            className='w-full border rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder-gray-400'
-                            rows={2} // default 2 rows
-                        />
-                        <div className='flex justify-end mt-1'>
-                            <button
-                                onClick={handleAddComment}
-                                className='bg-indigo-500 text-white px-3 py-1 rounded-lg text-sm hover:bg-indigo-600 transition'
-                            >
-                                Post
-                            </button>
-                        </div>
-                    </div>
+                    {editingCommentId === null && (
+                        <>
+                            <textarea
+                                placeholder='Add a comment...'
+                                value={commentText}
+                                onChange={e => setCommentText(e.target.value)}
+                                className='w-full border rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder-gray-400'
+                                rows={2}
+                            />
+
+                            <div className='flex justify-end mt-1'>
+                                <button
+                                    onClick={handleAddComment}
+                                    className='bg-indigo-500 text-white px-3 py-1 rounded-lg text-sm hover:bg-indigo-600 transition'
+                                >
+                                    Post
+                                </button>
+                            </div>
+                        </>
+                    )}
+                </div>
+            )}
+            {isEditing && (
+                <div className='flex justify-end gap-2 mt-2'>
+                    <button
+                        onClick={() => setIsEditing(false)}
+                        className='px-3 py-1 text-sm border rounded'
+                    >
+                        Cancel
+                    </button>
+
+                    <button
+                        onClick={handleUpdate}
+                        className='bg-green-500 text-white px-3 py-1 rounded text-sm'
+                    >
+                        Save
+                    </button>
                 </div>
             )}
         </div>
