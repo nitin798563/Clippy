@@ -15,14 +15,24 @@ import { Server } from "socket.io";
 const app = express();
 const server = createServer(app);
 const io = new Server(server, {
-  cors: { origin: "*" },
+  cors: {
+    origin: process.env.FRONTEND_URL,
+    credentials: true
+  },
+  transports: ["websocket", "polling"]
 });
-app.set("io", io);
 io.on("connection", (socket) => {
+  console.log("User connected:", socket.id);
+
   socket.on("join", (userId) => {
     socket.join(userId);
   });
+
+  socket.on("disconnect", () => {
+    console.log("disconnected:", socket.id);
+  });
 });
+app.set("io", io);
 
 
 await connectDB();
