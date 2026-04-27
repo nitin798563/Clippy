@@ -11,6 +11,7 @@ export const addUserStory = async (req, res) => {
         const { content, media_type, background_color } = req.body;
         const media = req.file
         let media_url = ''
+        let fileId = '';
 
         //upload media to imagekit
         if (media_type === 'image' || media_type === 'video') {
@@ -19,10 +20,11 @@ export const addUserStory = async (req, res) => {
                 {
                     file: fileBuffer.toString("base64"),
                     fileName: media.originalname,
-                     folder: "/story_media",
+                    folder: "/story_media",
                 }
             )
             media_url = response.url
+            fileId = response.fileId;
         }
 
         //create story
@@ -31,7 +33,8 @@ export const addUserStory = async (req, res) => {
             content,
             media_url,
             media_type,
-            background_color
+            background_color,
+             fileId 
         })
 
         //Schedule story deletion after 24 hours
@@ -63,3 +66,31 @@ export const getStories = async (req, res) => {
         res.json({ success: false, message: error.message });
     }
 }
+
+// Delete Story
+export const deleteStory = async (req, res) => {
+    try {
+        const { userId } = req.auth();
+        const { storyId } = req.params;
+
+        const story = await Story.findById(storyId);
+
+        if (!story) {
+            return res.json({ success: false, message: "Story not found" });
+        }
+
+        if (story.user.toString() !== userId) {
+            return res.json({ success: false, message: "Unauthorized" });
+        }
+        if (story.fileId) {
+          await imagekit.files.delete(story.fileId);
+        }
+        await Story.findByIdAndDelete(storyId);
+
+        res.json({ success: true, message: "Story deleted" });
+
+    } catch (error) {
+        console.log(error);
+        res.json({ success: false, message: error.message });
+    }
+};
